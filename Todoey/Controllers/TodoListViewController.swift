@@ -13,19 +13,14 @@ class TodoListViewController: UITableViewController {
     
     var itemArray = [Item]()
     let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    var selectedCategory: Category? {
+        didSet {
+            loadItems()
+        }
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
-        
-        loadItems()
-
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
     }
 
     override func didReceiveMemoryWarning() {
@@ -119,6 +114,7 @@ class TodoListViewController: UITableViewController {
             let newItem = Item(context: self.context)
             newItem.done = false
             newItem.title = textField.text!
+            newItem.parentCategory = self.selectedCategory
             self.itemArray.append(newItem)
             self.saveItems()
         }
@@ -142,6 +138,11 @@ class TodoListViewController: UITableViewController {
     }
     
     func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) {
+        var predicate = NSPredicate(format: "parentCategory.name MATCHES %@", selectedCategory!.name!)
+        if let searchPredicate = request.predicate {
+            predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate, searchPredicate])
+        }
+        request.predicate = predicate
         do {
             itemArray = try context.fetch(request)
         } catch {
